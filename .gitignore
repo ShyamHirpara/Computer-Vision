@@ -1,3 +1,29 @@
+# === IDE & Editor ===
+.vscode/
 .antigravitycli/
+.idea/
+
+# === Python ===
 venv/
-__pycache__
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+.env
+.Python
+
+# === Jupyter ===
+.ipynb_checkpoints/
+
+# === OpenCV / Media Outputs ===
+src/captures/
+src/videos/
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini
