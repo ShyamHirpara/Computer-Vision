@@ -20,7 +20,7 @@ build/
 .ipynb_checkpoints/
 
 # === OpenCV / Media Outputs ===
-# src/captures/
+src/captures/
 src/videos/
 
 # === OS ===
