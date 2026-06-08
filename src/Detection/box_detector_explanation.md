@@ -1,13 +1,13 @@
 # 📦 box_detector.py — Full Code Explanation
 
-> File: [box_detector.py.py](file:///c:/Users/hirap/Desktop/Computer-Vision/Detection/box_detector.py.py)
+> File: [box_detector.py](file:///c:/Users/hirap/Desktop/Computer-Vision/src/Detection/box_detector.py)
 
 ---
 
 ## 🗂️ Code Structure Overview
 
-```
-box_detector.py.py
+```text
+box_detector.py
 │
 ├── SECTION 1 — Global Constants & Parameters
 ├── SECTION 2 — preprocess(frame)         → frame  →  binary mask
@@ -21,7 +21,7 @@ box_detector.py.py
 
 ---
 
-## 🧩 Section 1 — Parameters (Lines 1–23)
+## 🧩 Section 1 — Parameters
 
 ```python
 HSV_LOWER_WHITE = np.array([17,  1,  114])
@@ -33,7 +33,7 @@ All configuration values are placed at the **top of the file** as global constan
 ### What is HSV?
 
 | Channel | Stands For | Range | What it means |
-|---------|-----------|-------|--------------|
+| ------- | ---------- | ----- | ------------- |
 | **H** | Hue | 0–180 | The color type (red=0, green=60, blue=120) |
 | **S** | Saturation | 0–255 | How "colorful" vs grey/white (0 = pure grey, 255 = vivid color) |
 | **V** | Value | 0–255 | Brightness (0 = black, 255 = fully bright) |
@@ -43,7 +43,7 @@ White objects have **low S** (near-grey) and **high V** (bright). That's why we 
 ### Parameter Reference Table
 
 | Parameter | Value | Purpose |
-|-----------|-------|---------|
+| --------- | ----- | ------- |
 | `HSV_LOWER_WHITE` | `[17, 1, 114]` | Minimum HSV for white detection |
 | `HSV_UPPER_WHITE` | `[114, 36, 253]` | Maximum HSV for white detection |
 | `MIN_AREA` | 900 px² | Ignore tiny noise blobs |
@@ -63,7 +63,7 @@ White objects have **low S** (near-grey) and **high V** (bright). That's why we 
 
 This is the **most important function**. It converts a raw color image into a binary mask.
 
-```
+```text
 Input:  BGR color frame  (640×480×3)
 Output: Binary mask      (640×480×1)  — white = detected regions
 ```
@@ -79,7 +79,7 @@ Smooths the image by averaging each pixel with its neighbours.
 Removes tiny high-frequency noise pixels **before** color analysis.
 Without this, individual bright pixels cause false detections.
 
-```
+```text
 Before blur:  noisy, grainy pixels
 After blur:   smooth gradients, cleaner color regions
 ```
@@ -90,6 +90,7 @@ hsv = cv.cvtColor(blurred, cv.COLOR_BGR2HSV)
 ```
 OpenCV loads images as **BGR** (Blue-Green-Red), not RGB.
 We convert to **HSV** because:
+
 - BGR makes it hard to isolate "white" (R=255, G=255, B=255 ≠ any threshold)
 - HSV isolates white as: **low S + high V** (regardless of H)
 - Much more robust to lighting changes
@@ -99,10 +100,11 @@ We convert to **HSV** because:
 mask = cv.inRange(hsv, HSV_LOWER_WHITE, HSV_UPPER_WHITE)
 ```
 Creates a **binary image**:
+
 - Pixel = **255 (white)** if HSV values fall inside the range
 - Pixel = **0 (black)** if outside the range
 
-```
+```text
 Result: white blobs everywhere in the image that matched the color range
 Problem: cables, reflections, white walls also detected!
 → Next steps clean this up
@@ -119,7 +121,7 @@ mask = cv.morphologyEx(mask, cv.MORPH_OPEN, k_main)
 
 Effect: Small isolated noise specks disappear. Large blobs (cubes) survive.
 
-```
+```text
 Before OPEN:  ···●···  ████████
 After OPEN:            ████████   ← noise dot removed
 ```
@@ -135,7 +137,7 @@ mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, k_main)
 
 Effect: Dark holes (shadows on cube faces) get filled. Blob becomes solid.
 
-```
+```text
 Before CLOSE:  ████  ████   ← hole in middle of cube blob
 After CLOSE:   ████████████ ← filled, solid blob
 ```
@@ -148,7 +150,7 @@ mask = cv.dilate(mask, k_sever, iterations=2)  # restore cube body
 This is the **key innovation** for this scene:
 The white cable physically touches the cube → they merge into one big blob.
 
-```
+```text
 ERODE × 2 (5×5 kernel, 2 passes = ~10px eaten from every edge):
   Cable (thin ~8px):  completely disappears  ✓
   Cube  (thick ~60px): shrinks to ~40px       ✓
@@ -179,7 +181,7 @@ return (
 ### Visual Explanation of Each Test
 
 | Test | Formula | Good box | Cable | Power strip |
-|------|---------|----------|-------|------------|
+| ---- | ------- | -------- | ----- | ----------- |
 | **Area** | `contourArea()` | ~1000–6000 | very large (fused) | large |
 | **Aspect** | `w / h` | 0.5–2.0 | >5 (very wide) | varies |
 | **Fill ratio** | `area / (w×h)` | ~0.7–0.95 | ~0.3 (irregular) | varies |
@@ -188,7 +190,7 @@ return (
 
 ### Why Check CENTER and not Bounding Box Edges?
 
-```
+```text
 ❌ Old approach (bbox edges):
    Left cube bbox: x=8, so x < ROI_MARGIN_X=50  → REJECTED  (wrong!)
 
@@ -205,14 +207,14 @@ return (
 contours, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 ```
 
-| Argument | Meaning |
-|----------|---------|
-| `RETR_EXTERNAL` | Only find outermost contours (ignore holes inside blobs) |
+| Argument              | Meaning                                                   |
+| --------------------- | --------------------------------------------------------- |
+| `RETR_EXTERNAL`       | Only find outermost contours (ignore holes inside blobs)  |
 | `CHAIN_APPROX_SIMPLE` | Store only key corner points, not every pixel (saves memory) |
 
 For each valid contour, the function draws:
 
-```
+```text
 (x,y)  ┌──────────────┐
        │              │
        │      ●       │  ← filled centre dot
@@ -221,6 +223,7 @@ For each valid contour, the function draws:
 ```
 
 Returns 3 values:
+
 - `output` — annotated frame (draw on this for display)
 - `mask`   — binary mask (useful for debugging)
 - `boxes`  — list of dicts with `pt1`, `pt2`, `center`, `area`
@@ -243,7 +246,7 @@ graph TD
 ### Mode Comparison
 
 | Mode | Input | Best for | Output |
-|------|-------|----------|--------|
+| ---- | ----- | -------- | ------ |
 | `"image"` | Saved .jpg | Testing & parameter tuning | Side-by-side mask + result |
 | `"camera"` | Live webcam | Real-time deployment | Live annotated video |
 | `"tuner"` | Live webcam | Calibrating HSV values | Prints tuned HSV to terminal |
@@ -266,7 +269,7 @@ hl = cv.getTrackbarPos("H Low", "HSV Tuner")
 ## 🔑 Key OpenCV Functions Used
 
 | Function | What it does |
-|----------|-------------|
+| -------- | ----------- |
 | `cv.GaussianBlur()` | Smooths image with a Gaussian kernel |
 | `cv.cvtColor()` | Converts between color spaces (BGR↔HSV) |
 | `cv.inRange()` | Binary threshold within a color range |
@@ -292,9 +295,9 @@ hl = cv.getTrackbarPos("H Low", "HSV Tuner")
 With the tuned HSV values `[17, 1, 114] → [114, 36, 253]`:
 
 | Detected Box | Coordinates | Matches Ground Truth? |
-|-------------|------------|----------------------|
+| ----------- | ----------- | -------------------- |
 | Left cube | `(183,241) → (249,316)` | ✅ ~98% |
 | Right cube | `(370,232) → (422,303)` | ✅ ~97% |
-| Back cube  | `(272,157) → (303,213)` | ✅ ~99% |
+| Back cube | `(272,157) → (303,213)` | ✅ ~99% |
 
-**0 false positives · 3/3 cubes detected**
+## 0 false positives · 3/3 cubes detected
